@@ -84,11 +84,15 @@
 
 
 (defun forward-sexp (&optional n)
-  (forward-form-command n))
+  (let ((point (current-point))
+	(count (or n 1)))
+    (form-offset point count T 0)))
 
 
 (defun backward-sexp (&optional n)
-  (backward-form-command n))
+  (let ((point (current-point))
+	(count (- (or n 1))))
+    (form-offset point count T 0)))
 
 
 (let ((hcl:*packages-for-warn-on-redefinition* nil))
@@ -163,9 +167,9 @@ Sixth arg COMMENTSTOP non-nil means stop after the start of a comment.
 
 (defun insert-pair (arg open close)
   (insert open)
-  (and arg (forward-sexp arg))
-  (insert close)
-  (backward-char 1))
+  (save-excursion
+    (and arg (forward-sexp arg))
+    (insert close)))
 
 
 (edefun insert-parentheses (&optional arg)
@@ -188,9 +192,9 @@ This command assumes point is not in a string or comment."
 
 (defun char-before* (&optional (p (current-point)))
   (with-point ((p p))
-    (character 
-     (points-to-string p
-                       (editor::i-point-before (current-point))))))
+    (let ((pb (editor::i-point-before (current-point))))
+      (and pb
+           (character (points-to-string p pb))))))
 
 
 (defun char-before (&optional (p (current-point)))
@@ -203,9 +207,9 @@ This command assumes point is not in a string or comment."
 
 (defun char-after* (&optional (p (current-point)))
   (with-point ((p p))
-    (character 
-     (points-to-string p
-                       (editor::i-point-after (current-point))))))
+    (let ((pa (editor::i-point-after (current-point))))
+      (and pa
+           (character (points-to-string p pa))))))
 
 
 (defun char-after (&optional (p (current-point)))

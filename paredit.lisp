@@ -364,7 +364,7 @@ out of the current list."
     "True if the point is within a Lisp line comment."
     (save-excursion
       (with-point ((orig (current-point)))
-        (beginning-of-defun-command nil)
+        (ignore-errors (beginning-of-defun-command nil))
         (let ((*readtable* *syntax-scanning*)
               (*inside-a-comment-p* nil))
           (ignore-errors
@@ -408,7 +408,7 @@ out of the current list."
   "True if the point is within a double-quote-delimited string."
   (save-excursion
     (with-point ((orig (current-point)))
-      (beginning-of-defun-command nil)
+      (ignore-errors (beginning-of-defun-command nil))
       (let ((*readtable* *syntax-scanning*)
             (*inside-a-string-p* nil))
         (ignore-errors
