@@ -2,16 +2,8 @@
 
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (unless (fdefinition 'save-excursion)
-    (defmacro save-excursion (&body body)
-      (lw:with-unique-names (buffer)
-        `(let ((,buffer (current-buffer)))
-           (with-buffer-locked (,buffer)
-             (buffer-save-excursion (,buffer) ,@body)))))))
-
-
-(defun command-namify (symbol)
-  (string-capitalize (substitute #\Space #\- (string symbol))))
+  (defun command-namify (symbol)
+    (string-capitalize (substitute #\Space #\- (string symbol)))))
 
 
 (defmacro while (pred &body body)
@@ -166,10 +158,16 @@ Sixth arg COMMENTSTOP non-nil means stop after the start of a comment.
 
 
 (defun insert-pair (arg open close)
-  (insert open)
-  (save-excursion
-    (and arg (forward-sexp arg))
-    (insert close)))
+  (etypecase arg
+    ((or null (eql 0)) 
+     (insert open)
+     (insert close)
+     (backward-char 1))
+    (integer 
+     (save-excursion
+       (insert open)
+       (and arg (forward-sexp arg))
+       (insert close)))))
 
 
 (edefun insert-parentheses (&optional arg)
@@ -225,6 +223,11 @@ This command assumes point is not in a string or comment."
   (save-excursion
     (point-position (line-end (current-point)))))
 
+(defun point-at-bol (;; &optional n
+                     )
+  (save-excursion
+    (point-position (line-start (current-point)))))
+
 
 (defun newline-and-indent (&optional n)
   (indent-new-line-command n))
@@ -268,24 +271,27 @@ This command assumes point is not in a string or comment."
   (move-past-close-and-reindent-command nil))
 
 
-(defun skip-chars-backward (chars &optional lim)
+(defun skip-chars-backward (chars &optional (lim 0))
   "Move point backward, stopping after a char not in STRING, or at pos LIM.
 See `skip-chars-forward' for details.
 Returns the distance traveled, either zero or negative."
-  (do ()
-      ((or (not (find (char-before*) chars))
-           (and lim (>= (point) lim)))
-       (forward-character-command 1))))
+  (do ((cnt 0 (1+ cnt)))
+      ((not (and (<= lim (point))
+                 (find (char-before*) chars)))
+       (forward-char 1)
+       (- cnt))))
 
 
-(defun skip-chars-forward (chars &optional lim)
+(defun skip-chars-forward (chars 
+                           &optional (lim (point-position (editor::buffer-%end (current-buffer)))))
   "Move point forward, stopping after a char not in STRING, or at pos LIM.
 See `skip-chars-forward' for details.
 Returns the distance traveled, either zero or negative."
-  (do ()
-      ((or (not (find (char-after*) chars))
-           (and lim (<= (point) lim)))
-       (backward-character-command 1))))
+  (do ((cnt 0 (1+ cnt)))
+      ((not (and (<= (point) lim)
+                 (find (char-after*) chars)))
+       (backward-char 1)
+       cnt)))
 
 
 ;;; *EOF*
