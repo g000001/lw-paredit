@@ -111,8 +111,14 @@
   (beginning-of-defun-command n))
 
 
+(defmacro without-asking (() &body body)
+  `(lw:letf (((variable-value 'editor::region-query-size) nil))
+     ,@body))
+
+
 (defun indent-sexp (&optional n)
-  (indent-form-command n))
+  (without-asking ()
+    (indent-form-command n)))
 
 
 (defun parse-partial-sexp (from to)
